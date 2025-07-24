@@ -404,7 +404,8 @@
 
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            /* 한 줄에 3개의 상품을 고정적으로 배열 */
+            grid-template-columns: repeat(3, 1fr); 
             gap: 2rem;
             margin-top: 2rem;
         }
@@ -965,7 +966,7 @@
             }
 
             .products-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr; /* 모바일에서는 1줄로 */
             }
 
             .btn {
@@ -1418,7 +1419,9 @@
             <p id="confirmationModalMessage" class="mb-2">정말로 이 작업을 수행하시겠습니까?</p>
             <div class="form-actions justify-content-center">
                 <button id="confirmActionButton" class="btn btn-danger"><i class="fas fa-check-circle"></i> 확인</button>
-                <button class="btn btn-secondary" onclick="closeConfirmationModal()"><i class="fas fa-times-circle"></i> 취소</button>
+                <button class="btn btn-secondary" onclick="closeConfirmationModal()">
+                    <i class="fas fa-times-circle"></i> 취소
+                </button>
             </div>
         </div>
     </div>
