@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -173,6 +174,12 @@
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .btn-primary {
@@ -1191,7 +1198,7 @@
             <div id="add-product-section" class="product-form-section hidden"> <!-- hidden 클래스 유지 -->
                 <h2 id="productFormTitle" class="section-title mb-2"><i class="fas fa-plus-circle"></i> 새 상품 등록</h2>
                 <p class="mb-2">새로운 상품 정보를 입력하거나 기존 상품을 수정하세요.</p>
-                <form id="productForm">
+                <div id="productForm">
                     <input type="hidden" id="productId"> <!-- 상품 ID 저장을 위한 hidden input -->
                     <div class="form-group">
                         <label for="productName" class="form-label">상품명</label>
@@ -1226,6 +1233,13 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="productCoupangLink" class="form-label">쿠팡 파트너스 링크</label>
+                        <input type="url" id="productCoupangLink" class="form-input" placeholder="쿠팡 파트너스 링크를 입력하세요 (예: https://link.coupang.com/a/...)">
+                        <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+                            <i class="fas fa-info-circle"></i> 쿠팡 파트너스에서 생성한 제휴 링크를 입력하세요. 이 링크를 통한 구매 시 수수료를 받을 수 있습니다.
+                        </p>
+                    </div>
+                    <div class="form-group">
                         <label for="productImage" class="form-label">상품 이미지 (URL 또는 파일 업로드)</label>
                         <input type="text" id="productImageUrl" class="form-input mb-2" placeholder="이미지 URL을 입력하세요 (예: https://example.com/image.jpg)">
                         <div class="file-upload-area" id="fileUploadArea">
@@ -1236,14 +1250,14 @@
                         <img id="imagePreview" src="" alt="Image Preview" class="image-preview mt-2">
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-success" id="submitProductBtn">
+                        <button type="button" class="btn btn-success" id="submitProductBtn" onclick="handleProductSubmit()">
                             <i class="fas fa-save"></i> 상품 저장
                         </button>
                         <button type="button" class="btn btn-danger" onclick="cancelProductForm()">
                             <i class="fas fa-times-circle"></i> 취소
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </main>
@@ -1453,12 +1467,12 @@
             'admin-panel': document.getElementById('admin-panel-section'),
             'add-product': document.getElementById('add-product-section')
         };
-        const productForm = document.getElementById('productForm');
         const productIdInput = document.getElementById('productId');
         const productNameInput = document.getElementById('productName');
         const productCategorySelect = document.getElementById('productCategory');
         const productPriceInput = document.getElementById('productPrice');
         const productDescriptionTextarea = document.getElementById('productDescription');
+        const productCoupangLinkInput = document.getElementById('productCoupangLink');
         const productImageUrlInput = document.getElementById('productImageUrl');
         const productImageFileInput = document.getElementById('productImageFile');
         const imagePreview = document.getElementById('imagePreview');
@@ -1562,13 +1576,9 @@
 
             // Logic related to product add/edit form
             if (sectionId === 'add-product') {
-                productFormTitle.textContent = '새 상품 등록';
-                submitProductBtn.textContent = '상품 저장';
+                productFormTitle.innerHTML = '<i class="fas fa-plus-circle"></i> 새 상품 등록';
                 submitProductBtn.innerHTML = '<i class="fas fa-save"></i> 상품 저장';
-                productForm.reset(); // Reset form
-                imagePreview.style.display = 'none';
-                imagePreview.src = '';
-                editingProductId = null; // Exit edit mode
+                resetProductForm(); // Reset form
                 console.log("Add Product Section is now visible and form reset."); // Debug: Confirm form visibility
 
                 if (category) {
@@ -1578,6 +1588,23 @@
                 applyFilters(); // Re-apply filters when returning to home
             }
             updateAdminPanelVisibility(); // Update admin UI on section change
+        }
+
+        /**
+         * Resets the product form to its initial state.
+         */
+        function resetProductForm() {
+            productIdInput.value = '';
+            productNameInput.value = '';
+            productCategorySelect.value = '';
+            productPriceInput.value = '';
+            productDescriptionTextarea.value = '';
+            productCoupangLinkInput.value = '';
+            productImageUrlInput.value = '';
+            productImageFileInput.value = '';
+            imagePreview.style.display = 'none';
+            imagePreview.src = '';
+            editingProductId = null;
         }
 
         /**
@@ -1687,19 +1714,24 @@
          * Loads product list from local storage.
          */
         function loadProducts() {
-            const storedProducts = localStorage.getItem('products');
-            if (storedProducts) {
-                products = JSON.parse(storedProducts);
-            } else {
-                // Initial dummy data (if no data in local storage)
-                products = [
-                    { id: Date.now() + 1, name: "삼성 갤럭시 S24", category: "전자제품", price: 1200000, description: "최신 플래그십 스마트폰", imageUrl: "https://placehold.co/400x200/cc6b49/ffffff?text=Galaxy+S24" },
-                    { id: Date.now() + 2, name: "LG 스탠바이미", category: "전자제품", price: 900000, description: "이동식 스크린 TV", imageUrl: "https://placehold.co/400x200/8b4513/ffffff?text=StandbyMe" },
-                    { id: Date.now() + 3, name: "다이슨 에어랩", category: "생활용품", price: 600000, description: "혁신적인 헤어 스타일러", imageUrl: "https://placehold.co/400x200/28a745/ffffff?text=Dyson+Airwrap" },
-                    { id: Date.now() + 4, name: "나이키 에어포스 1", category: "의류", price: 130000, description: "클래식한 디자인의 스니커즈", imageUrl: "https://placehold.co/400x200/17a2b8/ffffff?text=Nike+Air+Force" },
-                    { id: Date.now() + 5, name: "애플 아이패드 프로", category: "전자제품", price: 1500000, description: "강력한 성능의 태블릿", imageUrl: "https://placehold.co/400x200/dc3545/ffffff?text=iPad+Pro" }
-                ];
-                saveProducts(); // Save initial data
+            try {
+                const storedProducts = localStorage.getItem('products');
+                if (storedProducts) {
+                    products = JSON.parse(storedProducts);
+                } else {
+                    // Initial dummy data (if no data in local storage)
+                    products = [
+                        { id: Date.now() + 1, name: "삼성 갤럭시 S24", category: "전자제품", price: 1200000, description: "최신 플래그십 스마트폰", imageUrl: "https://placehold.co/400x200/cc6b49/ffffff?text=Galaxy+S24" },
+                        { id: Date.now() + 2, name: "LG 스탠바이미", category: "전자제품", price: 900000, description: "이동식 스크린 TV", imageUrl: "https://placehold.co/400x200/8b4513/ffffff?text=StandbyMe" },
+                        { id: Date.now() + 3, name: "다이슨 에어랩", category: "생활용품", price: 600000, description: "혁신적인 헤어 스타일러", imageUrl: "https://placehold.co/400x200/28a745/ffffff?text=Dyson+Airwrap" },
+                        { id: Date.now() + 4, name: "나이키 에어포스 1", category: "의류", price: 130000, description: "클래식한 디자인의 스니커즈", imageUrl: "https://placehold.co/400x200/17a2b8/ffffff?text=Nike+Air+Force" },
+                        { id: Date.now() + 5, name: "애플 아이패드 프로", category: "전자제품", price: 1500000, description: "강력한 성능의 태블릿", imageUrl: "https://placehold.co/400x200/dc3545/ffffff?text=iPad+Pro" }
+                    ];
+                    saveProducts(); // Save initial data
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+                products = [];
             }
             renderProducts(products); // Render product list
             updateAdminStats(); // Update admin statistics
@@ -1709,7 +1741,12 @@
          * Saves the product list to local storage.
          */
         function saveProducts() {
-            localStorage.setItem('products', JSON.stringify(products));
+            try {
+                localStorage.setItem('products', JSON.stringify(products));
+            } catch (error) {
+                console.error('Error saving products:', error);
+                showMessage('상품 저장 중 오류가 발생했습니다.', 'error');
+            }
         }
 
         /**
@@ -1732,10 +1769,13 @@
             productsToRender.forEach(product => {
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card fade-in';
-                // Add onclick event to product-image div for lightbox
+                // Escape quotes for proper HTML attribute values
+                const escapedImageUrl = (product.imageUrl || 'https://placehold.co/400x200/cc6b49/ffffff?text=No+Image').replace(/'/g, "\\'");
+                const escapedName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                
                 productCard.innerHTML = `
-                    <div class="product-image" onclick="openLightbox('${product.imageUrl || 'https://placehold.co/400x200/cc6b49/ffffff?text=No+Image'}')">
-                        ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}" onerror="this.onerror=null;this.src='https://placehold.co/400x200/cc6b49/ffffff?text=No+Image';">` : `<i class="fas fa-image"></i>`}
+                    <div class="product-image" onclick="openLightbox('${escapedImageUrl}')">
+                        ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${escapedName}" onerror="this.onerror=null;this.src='https://placehold.co/400x200/cc6b49/ffffff?text=No+Image';">` : `<i class="fas fa-image"></i>`}
                     </div>
                     <div class="product-info">
                         <span class="product-category-tag">${product.category}</span>
@@ -1743,14 +1783,19 @@
                         <p class="product-price">${product.price.toLocaleString()}원</p>
                         <p class="product-description">${product.description}</p>
                         <div class="product-actions">
-                            <a href="${product.coupangLink || '#'}" target="_blank" class="btn btn-primary btn-small">
-                                <i class="fas fa-shopping-cart"></i> 구매하기
-                            </a>
+                            ${product.coupangLink ? 
+                                `<a href="${product.coupangLink}" target="_blank" class="btn btn-primary btn-small">
+                                    <i class="fas fa-shopping-cart"></i> 쿠팡에서 구매
+                                </a>` :
+                                `<span class="btn btn-secondary btn-small" style="opacity: 0.6; cursor: not-allowed;">
+                                    <i class="fas fa-link-slash"></i> 링크 없음
+                                </span>`
+                            }
                             <!-- Admin-only edit/delete buttons -->
-                            <button class="btn btn-info btn-small admin-action-btn ${isAdmin ? '' : 'hidden'}" onclick="editProduct('${product.id}')">
+                            <button class="btn btn-info btn-small admin-action-btn ${isAdmin ? '' : 'hidden'}" onclick="editProduct(${product.id})">
                                 <i class="fas fa-edit"></i> 수정
                             </button>
-                            <button class="btn btn-danger btn-small admin-action-btn ${isAdmin ? '' : 'hidden'}" onclick="confirmDeleteProduct('${product.id}', '${product.name}')">
+                            <button class="btn btn-danger btn-small admin-action-btn ${isAdmin ? '' : 'hidden'}" onclick="confirmDeleteProduct(${product.id}, '${escapedName}')">
                                 <i class="fas fa-trash-alt"></i> 삭제
                             </button>
                         </div>
@@ -1761,18 +1806,38 @@
         }
 
         /**
-         * Handles product registration or editing.
-         * @param {Event} event - Form submission event.
+         * Handles product form submission
          */
-        productForm.addEventListener('submit', (event) => {
-            event.preventDefault();
+        function handleProductSubmit() {
+            // Validate required fields
+            if (!productNameInput.value.trim()) {
+                showMessage('상품명을 입력해주세요.', 'error');
+                productNameInput.focus();
+                return;
+            }
+            if (!productCategorySelect.value) {
+                showMessage('카테고리를 선택해주세요.', 'error');
+                productCategorySelect.focus();
+                return;
+            }
+            if (!productPriceInput.value || productPriceInput.value <= 0) {
+                showMessage('올바른 가격을 입력해주세요.', 'error');
+                productPriceInput.focus();
+                return;
+            }
+            if (!productDescriptionTextarea.value.trim()) {
+                showMessage('상품 설명을 입력해주세요.', 'error');
+                productDescriptionTextarea.focus();
+                return;
+            }
 
-            const id = productIdInput.value ? parseInt(productIdInput.value) : Date.now();
-            const name = productNameInput.value;
+            const id = editingProductId || Date.now();
+            const name = productNameInput.value.trim();
             const category = productCategorySelect.value;
             const price = parseInt(productPriceInput.value);
-            const description = productDescriptionTextarea.value;
-            let imageUrl = productImageUrlInput.value;
+            const description = productDescriptionTextarea.value.trim();
+            const coupangLink = productCoupangLinkInput.value.trim();
+            let imageUrl = productImageUrlInput.value.trim();
 
             // If a file is uploaded (requires server-side upload logic in a real app)
             if (productImageFileInput.files.length > 0) {
@@ -1782,14 +1847,14 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     imageUrl = e.target.result; // Use Data URL
-                    saveOrUpdateProduct({ id, name, category, price, description, imageUrl });
+                    saveOrUpdateProduct({ id, name, category, price, description, coupangLink, imageUrl });
                 };
                 reader.readAsDataURL(file);
                 return; // Call save function after file read completes
             }
 
-            saveOrUpdateProduct({ id, name, category, price, description, imageUrl });
-        });
+            saveOrUpdateProduct({ id, name, category, price, description, coupangLink, imageUrl });
+        }
 
         /**
          * Saves or updates product data.
@@ -1804,6 +1869,7 @@
                     showMessage('상품이 성공적으로 수정되었습니다!', 'success');
                 } else {
                     showMessage('상품을 찾을 수 없습니다.', 'error');
+                    return;
                 }
                 editingProductId = null; // Exit edit mode
             } else {
@@ -1819,14 +1885,13 @@
 
         /**
          * Populates the product edit form and switches to edit mode.
-         * @param {string} productId - ID of the product to edit.
+         * @param {number} productId - ID of the product to edit.
          */
         function editProduct(productId) {
-            const productToEdit = products.find(p => p.id === parseInt(productId));
+            const productToEdit = products.find(p => p.id === productId);
             if (productToEdit) {
                 editingProductId = productToEdit.id;
-                productFormTitle.textContent = '상품 수정';
-                submitProductBtn.textContent = '상품 업데이트';
+                productFormTitle.innerHTML = '<i class="fas fa-edit"></i> 상품 수정';
                 submitProductBtn.innerHTML = '<i class="fas fa-save"></i> 상품 업데이트';
 
                 productIdInput.value = productToEdit.id;
@@ -1834,6 +1899,7 @@
                 productCategorySelect.value = productToEdit.category;
                 productPriceInput.value = productToEdit.price;
                 productDescriptionTextarea.value = productToEdit.description;
+                productCoupangLinkInput.value = productToEdit.coupangLink || '';
                 productImageUrlInput.value = productToEdit.imageUrl || '';
 
                 if (productToEdit.imageUrl) {
@@ -1852,11 +1918,11 @@
 
         /**
          * Displays a confirmation modal for product deletion.
-         * @param {string} productId - ID of the product to delete.
+         * @param {number} productId - ID of the product to delete.
          * @param {string} productName - Name of the product to delete (for confirmation message).
          */
         function confirmDeleteProduct(productId, productName) {
-            confirmationModalTitle.textContent = '상품 삭제 확인';
+            confirmationModalTitle.innerHTML = '<i class="fas fa-trash-alt"></i> 상품 삭제 확인';
             confirmationModalMessage.innerHTML = `'<strong>${productName}</strong>' 상품을 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`;
             confirmActionButton.onclick = () => deleteProduct(productId);
             confirmationModal.classList.add('show');
@@ -1864,16 +1930,17 @@
 
         /**
          * Deletes a product.
-         * @param {string} productId - ID of the product to delete.
+         * @param {number} productId - ID of the product to delete.
          */
         function deleteProduct(productId) {
             closeConfirmationModal(); // Close confirmation modal
             const initialLength = products.length;
-            products = products.filter(p => p.id !== parseInt(productId));
+            products = products.filter(p => p.id !== productId);
             if (products.length < initialLength) {
                 saveProducts();
                 applyFilters(); // Re-apply filters to reflect changes
                 showMessage('상품이 성공적으로 삭제되었습니다.', 'success');
+                updateAdminStats(); // Update admin statistics after deletion
             } else {
                 showMessage('상품 삭제에 실패했습니다.', 'error');
             }
@@ -1883,10 +1950,7 @@
          * Cancels the product add/edit form and returns to home.
          */
         function cancelProductForm() {
-            productForm.reset();
-            imagePreview.style.display = 'none';
-            imagePreview.src = '';
-            editingProductId = null;
+            resetProductForm();
             showSection('home');
         }
 
@@ -2158,8 +2222,8 @@
          * Loads SEO settings from local storage and applies them.
          */
         function loadSEOConfig() {
-            const config = JSON.parse(localStorage.getItem('seoConfig'));
-            if (config) {
+            const config = JSON.parse(localStorage.getItem('seoConfig') || '{}');
+            if (Object.keys(config).length > 0) {
                 applySEOConfig(config);
             }
         }
@@ -2187,6 +2251,24 @@
             }
             if (event.target === lightboxModal) { // Close lightbox modal when clicking outside
                 closeLightbox();
+            }
+        });
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (confirmationModal.classList.contains('show')) {
+                    closeConfirmationModal();
+                }
+                if (seoModal.classList.contains('show')) {
+                    closeSEOModal();
+                }
+                if (loginModal.classList.contains('show')) {
+                    closeLoginModal();
+                }
+                if (lightboxModal.classList.contains('show')) {
+                    closeLightbox();
+                }
             }
         });
 
@@ -2293,11 +2375,6 @@
             currentPanX = e.clientX - startX;
             currentPanY = e.clientY - startY;
 
-            // Optional: Add boundaries to prevent panning too far
-            // This requires calculating the image's zoomed dimensions and the lightbox content's dimensions
-            // For simplicity, we'll omit complex boundary calculations for now,
-            // but the image will be clipped by `overflow: hidden` on `.lightbox-content`
-
             applyLightboxTransform();
         }
 
@@ -2309,13 +2386,12 @@
             lightboxImage.classList.remove('grabbing');
         }
 
-
-        // -------------------- Gemini API Integration: Auto-generate Product Description --------------------
+        // -------------------- Claude API Integration: Auto-generate Product Description --------------------
 
         generateDescriptionBtn.addEventListener('click', generateProductDescription);
 
         /**
-         * Generates product description automatically using Gemini API.
+         * Generates product description automatically using Claude API.
          */
         async function generateProductDescription() {
             if (!isAdmin) {
@@ -2341,44 +2417,57 @@
             }
             if (currentDescription) {
                 prompt += `\n현재 설명: "${currentDescription}"`;
-                prompt += `\n\n위 정보를 바탕으로 이 상품에 대한 매력적이고 상세한 설명을 200자 내외로 작성해주세요. 기존 설명이 있다면 이를 보완하거나 새롭게 작성해주세요.`;
+                prompt += `\n\n위 정보를 바탕으로 이 상품에 대한 매력적이고 상세한 설명을 200자 내외로 작성해주세요. 기존 설명이 있다면 이를 보완하거나 새롭게 작성해주세요. 상품의 주요 특징, 장점, 사용 용도 등을 포함해주세요.`;
             } else {
-                prompt += `\n\n위 상품명과 카테고리를 바탕으로 이 상품에 대한 매력적이고 상세한 설명을 200자 내외로 작성해주세요.`;
+                prompt += `\n\n위 상품명과 카테고리를 바탕으로 이 상품에 대한 매력적이고 상세한 설명을 200자 내외로 작성해주세요. 상품의 주요 특징, 장점, 사용 용도 등을 포함해주세요.`;
             }
             
             try {
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = ""; // Provided automatically by Canvas environment.
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [
+                            { role: "user", content: prompt }
+                        ]
+                    })
                 });
 
                 const result = await response.json();
 
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const generatedText = result.candidates[0].content.parts[0].text;
+                if (result.content && result.content.length > 0 && result.content[0].text) {
+                    const generatedText = result.content[0].text.trim();
                     productDescriptionTextarea.value = generatedText;
                     showMessage('상품 설명이 성공적으로 생성되었습니다!', 'success');
                 } else {
                     showMessage('상품 설명을 생성하지 못했습니다. 다시 시도해주세요.', 'error');
-                    console.error('Gemini API 응답 오류:', result);
+                    console.error('Claude API 응답 오류:', result);
                 }
             } catch (error) {
                 showMessage('상품 설명 생성 중 오류가 발생했습니다.', 'error');
-                console.error('Gemini API 호출 오류:', error);
+                console.error('Claude API 호출 오류:', error);
             } finally {
                 llmLoadingSpinner.style.display = 'none'; // Hide loading spinner
                 generateDescriptionBtn.disabled = false; // Enable button
             }
         }
+
+        // -------------------- Admin Password Enter Key Support --------------------
+        adminPasswordInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                loginAdmin();
+            }
+        });
+
+        // -------------------- Auto-resize textarea --------------------
+        productDescriptionTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
     </script>
 </body>
 </html>
